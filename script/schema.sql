@@ -1,0 +1,3 @@
+CREATE DATABASE jeu_de_ligne;
+
+CREATE TABLE ();
