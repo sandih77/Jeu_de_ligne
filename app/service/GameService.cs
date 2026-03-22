@@ -2,6 +2,7 @@ namespace app.service;
 
 using app.model;
 using System.Drawing;
+using Point = model.Point;
 
 public class GameService
 {
@@ -33,6 +34,10 @@ public class GameService
         if (game.IsFinished)
             return false;
 
+        // Vérifier si le point couperait une ligne de l'adversaire
+        if (WouldCrossOpponentLine(game, x, y, game.CurrentPlayer))
+            return false;
+
         bool placed = game.Board.PlacePoint(x, y, game.CurrentPlayer);
 
         if (placed)
@@ -45,6 +50,73 @@ public class GameService
         return placed;
     }
 
+    private bool WouldCrossOpponentLine(Game game, int x, int y, Player currentPlayer)
+    {
+        foreach (var line in game.ScoredLines)
+        {
+            // On peut couper ses propres lignes
+            if (line.Owner == currentPlayer)
+                continue;
+
+            // Vérifier si le point (x, y) est sur le segment de la ligne adverse
+            if (IsPointOnLineSegment(x, y, line))
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsPointOnLineSegment(int x, int y, Line line)
+    {
+        if (line.Points.Count < 2)
+            return false;
+
+        var first = line.Points.First();
+        var last = line.Points.Last();
+
+        // Calculer la direction de la ligne
+        int dx = Math.Sign(last.X - first.X);
+        int dy = Math.Sign(last.Y - first.Y);
+
+        // Vérifier si le point est aligné avec la ligne
+        int diffX = x - first.X;
+        int diffY = y - first.Y;
+
+        // Si la ligne est horizontale (dy == 0)
+        if (dy == 0 && dx != 0)
+        {
+            if (y != first.Y) return false;
+            int minX = Math.Min(first.X, last.X);
+            int maxX = Math.Max(first.X, last.X);
+            return x > minX && x < maxX;
+        }
+
+        // Si la ligne est verticale (dx == 0)
+        if (dx == 0 && dy != 0)
+        {
+            if (x != first.X) return false;
+            int minY = Math.Min(first.Y, last.Y);
+            int maxY = Math.Max(first.Y, last.Y);
+            return y > minY && y < maxY;
+        }
+
+        // Ligne diagonale
+        if (dx != 0 && dy != 0)
+        {
+            // Vérifier que le point est sur la diagonale
+            if (diffX * dy != diffY * dx) return false;
+
+            // Vérifier que le point est entre les extrémités (exclusif)
+            int minX = Math.Min(first.X, last.X);
+            int maxX = Math.Max(first.X, last.X);
+            int minY = Math.Min(first.Y, last.Y);
+            int maxY = Math.Max(first.Y, last.Y);
+
+            return x > minX && x < maxX && y > minY && y < maxY;
+        }
+
+        return false;
+    }
+
     public void CheckForLines(Game game, int x, int y, Player player)
     {
         foreach (var (dx, dy) in Directions)
@@ -53,15 +125,15 @@ public class GameService
 
             if (linePoints.Count >= 5)
             {
-                // Chercher des segments de 5 points non encore comptés
-                var newLines = FindNewLines(linePoints, game);
+                // Chercher des segments de 5 points non encore comptés dans cette direction
+                var newLines = FindNewLines(linePoints, game, dx, dy);
                 foreach (var line in newLines)
                 {
                     game.AddScoredLine(line);
-                    // Marquer les points comme faisant partie d'une ligne scorée
+                    // Marquer les points comme faisant partie d'une ligne scorée dans cette direction
                     foreach (var point in line.Points)
                     {
-                        point.IsPartOfScoredLine = true;
+                        point.MarkScoredInDirection(dx, dy);
                     }
                 }
             }
@@ -80,6 +152,7 @@ public class GameService
         while (board.IsValidPosition(x, y))
         {
             var point = board.GetPoint(x, y);
+            // Un joueur ne peut utiliser que ses propres points
             if (point != null && point.Owner == player)
             {
                 tempPoints.Add(point);
@@ -110,6 +183,7 @@ public class GameService
         while (board.IsValidPosition(x, y))
         {
             var point = board.GetPoint(x, y);
+            // Un joueur ne peut utiliser que ses propres points
             if (point != null && point.Owner == player)
             {
                 points.Add(point);
@@ -125,7 +199,7 @@ public class GameService
         return points;
     }
 
-    private List<Line> FindNewLines(List<Point> linePoints, Game game)
+    private List<Line> FindNewLines(List<Point> linePoints, Game game, int dx, int dy)
     {
         var newLines = new List<Line>();
 
@@ -134,22 +208,72 @@ public class GameService
         {
             var segment = linePoints.Skip(i).Take(5).ToList();
 
-            // Vérifier si ce segment contient des points déjà utilisés dans une ligne
-            bool allPointsAvailable = segment.All(p => !p.IsPartOfScoredLine);
+            // Vérifier si ce segment contient des points déjà utilisés dans CETTE direction
+            bool allPointsAvailable = segment.All(p => !p.IsScoredInDirection(dx, dy));
 
             if (allPointsAvailable)
             {
                 var line = new Line(segment, segment[0].Owner!);
-                newLines.Add(line);
 
-                // Note: On ne marque pas encore les points comme utilisés
-                // Car on veut permettre plusieurs lignes différentes
-                // seulement si elles sont dans des directions différentes
+                // Vérifier que cette ligne ne coupe pas une ligne adverse
+                if (!LineIntersectsOpponentLines(line, game))
+                {
+                    newLines.Add(line);
+                }
                 break; // Une seule ligne par direction pour cette vérification
             }
         }
 
         return newLines;
+    }
+
+    private bool LineIntersectsOpponentLines(Line newLine, Game game)
+    {
+        if (newLine.Points.Count < 2)
+            return false;
+
+        var first = newLine.Points.First();
+        var last = newLine.Points.Last();
+
+        foreach (var existingLine in game.ScoredLines)
+        {
+            // On peut croiser ses propres lignes
+            if (existingLine.Owner == newLine.Owner)
+                continue;
+
+            // Vérifier si les deux lignes se croisent
+            if (DoLinesIntersect(first, last, existingLine.Points.First(), existingLine.Points.Last()))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool DoLinesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
+    {
+        // Utiliser la détection d'intersection géométrique de segments
+        // Les segments peuvent se croiser entre les points de la grille
+
+        double x1 = line1Start.X, y1 = line1Start.Y;
+        double x2 = line1End.X, y2 = line1End.Y;
+        double x3 = line2Start.X, y3 = line2Start.Y;
+        double x4 = line2End.X, y4 = line2End.Y;
+
+        // Calculer le dénominateur
+        double denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+        // Si denom == 0, les lignes sont parallèles
+        if (Math.Abs(denom) < 0.0001)
+            return false;
+
+        // Calculer les paramètres t et u
+        double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+        double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+
+        // Les segments se croisent si t et u sont strictement entre 0 et 1 (exclusif)
+        // On exclut les extrémités pour permettre les lignes qui se touchent aux bouts
+        const double epsilon = 0.0001;
+        return t > epsilon && t < (1 - epsilon) && u > epsilon && u < (1 - epsilon);
     }
 
     public void ResetGame(Game game)

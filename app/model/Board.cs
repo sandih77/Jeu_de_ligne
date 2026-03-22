@@ -32,7 +32,7 @@ public class Board
             for (int y = 0; y < Height; y++)
             {
                 Grid[x, y].Owner = null;
-                Grid[x, y].IsPartOfScoredLine = false;
+                Grid[x, y].ScoredDirections.Clear();
             }
         }
     }
