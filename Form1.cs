@@ -14,6 +14,8 @@ public partial class Form1 : Form
     private Label labelScore;
     private Label labelCannonHint;
     private Label labelCannonStatus;
+    private Label labelSaveStatus;
+    private CheckBox chkAutoSave;
     private System.Windows.Forms.Timer? _feedbackTimer;
 
     public Form1()
@@ -84,7 +86,7 @@ public partial class Form1 : Form
         {
             Text = "Nouvelle Partie",
             Location = new System.Drawing.Point(270, 10),
-            Size = new Size(110, 28),
+            Size = new Size(100, 28),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.FromArgb(80, 180, 80),
             ForeColor = Color.White,
@@ -93,6 +95,54 @@ public partial class Form1 : Form
         };
         btnNouveau.FlatAppearance.BorderSize = 0;
         btnNouveau.Click += BtnNouveau_Click;
+
+        Button btnSave = new Button
+        {
+            Text = "Sauvegarder",
+            Location = new System.Drawing.Point(580, 10),
+            Size = new Size(90, 28),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.FromArgb(70, 130, 180),
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 9, FontStyle.Bold),
+            Cursor = Cursors.Hand
+        };
+        btnSave.FlatAppearance.BorderSize = 0;
+        btnSave.Click += BtnSave_Click;
+
+        Button btnLoad = new Button
+        {
+            Text = "Charger",
+            Location = new System.Drawing.Point(680, 10),
+            Size = new Size(80, 28),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.FromArgb(150, 100, 50),
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 9, FontStyle.Bold),
+            Cursor = Cursors.Hand
+        };
+        btnLoad.FlatAppearance.BorderSize = 0;
+        btnLoad.Click += BtnLoad_Click;
+
+        chkAutoSave = new CheckBox
+        {
+            Text = "Auto-save",
+            Location = new System.Drawing.Point(580, 42),
+            AutoSize = true,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 8),
+            Checked = false
+        };
+        chkAutoSave.CheckedChanged += ChkAutoSave_Changed;
+
+        labelSaveStatus = new Label
+        {
+            Text = "",
+            Location = new System.Drawing.Point(680, 44),
+            Size = new Size(130, 20),
+            Font = new Font("Segoe UI", 8),
+            ForeColor = Color.LightGreen
+        };
 
         labelJoueur = new Label
         {
@@ -137,6 +187,10 @@ public partial class Form1 : Form
         configPanel.Controls.Add(labelY);
         configPanel.Controls.Add(numY);
         configPanel.Controls.Add(btnNouveau);
+        configPanel.Controls.Add(btnSave);
+        configPanel.Controls.Add(btnLoad);
+        configPanel.Controls.Add(chkAutoSave);
+        configPanel.Controls.Add(labelSaveStatus);
         configPanel.Controls.Add(labelJoueur);
         configPanel.Controls.Add(labelScore);
         configPanel.Controls.Add(labelCannonHint);
@@ -154,6 +208,8 @@ public partial class Form1 : Form
         _controller.OnPlayerChanged += OnPlayerChanged;
         _controller.OnScoreChanged += OnScoreChanged;
         _controller.OnCannonFired += OnCannonFired;
+        _controller.OnSaveStatusChanged += OnSaveStatusChanged;
+        _controller.OnSaveError += OnSaveError;
 
         this.Controls.Add(configPanel);
         this.Controls.Add(_plateauView);
@@ -161,6 +217,9 @@ public partial class Form1 : Form
         // Initialiser le jeu
         _controller.NewGame((int)numX.Value, (int)numY.Value);
         UpdateScoreLabel();
+
+        // Initialiser la base de donnees
+        _ = _controller.InitializeDatabaseAsync();
 
         // Timer pour les messages temporaires
         _feedbackTimer = new System.Windows.Forms.Timer { Interval = 2500 };
@@ -246,5 +305,57 @@ public partial class Form1 : Form
     private void UpdateScoreLabel()
     {
         labelScore.Text = _controller.GetScoreText();
+    }
+
+    private void OnSaveStatusChanged(string message)
+    {
+        labelSaveStatus.Text = message;
+        labelSaveStatus.ForeColor = Color.LightGreen;
+    }
+
+    private void OnSaveError(string message)
+    {
+        labelSaveStatus.Text = message;
+        labelSaveStatus.ForeColor = Color.Red;
+    }
+
+    private async void BtnSave_Click(object? sender, EventArgs e)
+    {
+        if (_controller.CurrentGameSaveId == 0)
+        {
+            // Premiere sauvegarde - demander un nom
+            using var dialog = new SaveGameDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                var id = await _controller.CreateSaveAsync(dialog.SaveName, chkAutoSave.Checked);
+                if (id > 0)
+                {
+                    labelSaveStatus.Text = $"Partie #{id} creee";
+                }
+            }
+        }
+        else
+        {
+            // Sauvegarde manuelle
+            await _controller.ManualSaveAsync();
+        }
+    }
+
+    private async void BtnLoad_Click(object? sender, EventArgs e)
+    {
+        var saves = await _controller.GetSavedGamesAsync();
+        if (saves.Count == 0)
+        {
+            MessageBox.Show("Aucune partie sauvegardee.", "Charger", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dialog = new LoadGameDialog(saves, _controller);
+        dialog.ShowDialog();
+    }
+
+    private void ChkAutoSave_Changed(object? sender, EventArgs e)
+    {
+        _controller.SetAutoSave(chkAutoSave.Checked);
     }
 }
