@@ -40,6 +40,7 @@ public class PlateauView : Panel
         CalculateCellSize(board.Width, board.Height);
 
         DrawGrid(g, board);
+        DrawScoredLines(g);
         DrawPoints(g, board);
     }
 
@@ -75,6 +76,32 @@ public class PlateauView : Panel
         }
     }
 
+    private void DrawScoredLines(Graphics g)
+    {
+        var scoredLines = _controller.ScoredLines;
+
+        foreach (var line in scoredLines)
+        {
+            if (line.Points.Count >= 2)
+            {
+                var firstPoint = line.Points.First();
+                var lastPoint = line.Points.Last();
+
+                int x1 = _margin + firstPoint.X * _cellSize;
+                int y1 = _margin + firstPoint.Y * _cellSize;
+                int x2 = _margin + lastPoint.X * _cellSize;
+                int y2 = _margin + lastPoint.Y * _cellSize;
+
+                using var linePen = new Pen(line.Owner.Color, 4);
+                linePen.DashStyle = DashStyle.Solid;
+                linePen.StartCap = LineCap.Round;
+                linePen.EndCap = LineCap.Round;
+
+                g.DrawLine(linePen, x1, y1, x2, y2);
+            }
+        }
+    }
+
     private void DrawPoints(Graphics g, Board board)
     {
         int pointRadius = _cellSize / 4;
@@ -96,11 +123,21 @@ public class PlateauView : Panel
                         pointRadius * 2,
                         pointRadius * 2);
 
-                    g.DrawEllipse(Pens.Black,
+                    // Bordure spéciale pour les points faisant partie d'une ligne scorée
+                    Pen borderPen = point.IsPartOfScoredLine
+                        ? new Pen(Color.Gold, 3)
+                        : Pens.Black;
+
+                    g.DrawEllipse(borderPen,
                         xPos - pointRadius,
                         yPos - pointRadius,
                         pointRadius * 2,
                         pointRadius * 2);
+
+                    if (point.IsPartOfScoredLine && borderPen != Pens.Black)
+                    {
+                        borderPen.Dispose();
+                    }
                 }
             }
         }

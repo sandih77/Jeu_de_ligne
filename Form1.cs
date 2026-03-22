@@ -1,75 +1,76 @@
 namespace Projet_Jeu_De_Ligne;
 
+using app.controller;
+using app.model;
+using app.view;
+
 public partial class Form1 : Form
 {
-    private int gridX = 10; // Nombre de colonnes
-    private int gridY = 10; // Nombre de lignes
-    private int cellSize = 40; // Taille d'une cellule
-    private int margin = 50; // Marge autour du plateau
-
-    private int[,] plateau; // 0 = vide, 1 = joueur 1, 2 = joueur 2
-    private int joueurActuel = 1;
-
-    private Panel plateauPanel;
+    private GameController _controller;
+    private PlateauView _plateauView;
     private NumericUpDown numX;
     private NumericUpDown numY;
     private Label labelJoueur;
+    private Label labelScore;
 
     public Form1()
     {
+        _controller = new GameController();
         InitializeComponent();
     }
 
     private void InitializeComponent()
     {
-        this.Text = "Jeu de Ligne";
-        this.Size = new Size(700, 650);
+        this.Text = "Jeu de Ligne - 5 points alignés";
+        this.Size = new Size(750, 700);
         this.StartPosition = FormStartPosition.CenterScreen;
+        this.MinimumSize = new Size(600, 500);
 
         // Panel de configuration
         Panel configPanel = new Panel
         {
-            Location = new Point(10, 10),
-            Size = new Size(660, 50),
-            BackColor = Color.LightGray
+            Location = new System.Drawing.Point(10, 10),
+            Size = new Size(720, 80),
+            BackColor = Color.LightGray,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
 
         Label labelX = new Label
         {
             Text = "Colonnes (X):",
-            Location = new Point(10, 15),
+            Location = new System.Drawing.Point(10, 15),
             AutoSize = true
         };
 
         numX = new NumericUpDown
         {
-            Location = new Point(100, 12),
+            Location = new System.Drawing.Point(100, 12),
             Size = new Size(60, 25),
-            Minimum = 3,
+            Minimum = 5,
             Maximum = 20,
-            Value = gridX
+            Value = 10
         };
 
         Label labelY = new Label
         {
             Text = "Lignes (Y):",
-            Location = new Point(180, 15),
+            Location = new System.Drawing.Point(180, 15),
             AutoSize = true
         };
 
         numY = new NumericUpDown
         {
-            Location = new Point(260, 12),
+            Location = new System.Drawing.Point(260, 12),
             Size = new Size(60, 25),
-            Minimum = 3,
+            Minimum = 5,
             Maximum = 20,
-            Value = gridY
+            Value = 10
         };
 
         Button btnNouveau = new Button
         {
             Text = "Nouvelle Partie",
-            Location = new Point(340, 10),
+            Location = new System.Drawing.Point(340, 10),
             Size = new Size(120, 30)
         };
         btnNouveau.Click += BtnNouveau_Click;
@@ -77,10 +78,19 @@ public partial class Form1 : Form
         labelJoueur = new Label
         {
             Text = "Tour: Joueur 1",
-            Location = new Point(480, 15),
+            Location = new System.Drawing.Point(480, 15),
             AutoSize = true,
             Font = new Font("Arial", 10, FontStyle.Bold),
             ForeColor = Color.Blue
+        };
+
+        labelScore = new Label
+        {
+            Text = "Joueur 1: 0 | Joueur 2: 0",
+            Location = new System.Drawing.Point(10, 50),
+            Size = new Size(700, 25),
+            Font = new Font("Arial", 11, FontStyle.Bold),
+            ForeColor = Color.DarkGreen
         };
 
         configPanel.Controls.Add(labelX);
@@ -89,131 +99,52 @@ public partial class Form1 : Form
         configPanel.Controls.Add(numY);
         configPanel.Controls.Add(btnNouveau);
         configPanel.Controls.Add(labelJoueur);
+        configPanel.Controls.Add(labelScore);
 
-        // Panel du plateau
-        plateauPanel = new Panel
+        // Panel du plateau utilisant PlateauView
+        _plateauView = new PlateauView(_controller)
         {
-            Location = new Point(10, 70),
-            Size = new Size(660, 530),
-            BackColor = Color.Beige,
-            BorderStyle = BorderStyle.FixedSingle
+            Location = new System.Drawing.Point(10, 100),
+            Size = new Size(720, 550),
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
-        plateauPanel.Paint += PlateauPanel_Paint;
-        plateauPanel.MouseClick += PlateauPanel_MouseClick;
+
+        // S'abonner aux événements du controller
+        _controller.OnPlayerChanged += OnPlayerChanged;
+        _controller.OnScoreChanged += OnScoreChanged;
 
         this.Controls.Add(configPanel);
-        this.Controls.Add(plateauPanel);
+        this.Controls.Add(_plateauView);
 
-        // Initialiser le plateau
-        InitialiserPlateau();
-    }
-
-    private void InitialiserPlateau()
-    {
-        gridX = (int)numX.Value;
-        gridY = (int)numY.Value;
-        plateau = new int[gridX, gridY];
-        joueurActuel = 1;
-        MettreAJourLabelJoueur();
-        plateauPanel.Invalidate();
+        // Initialiser le jeu
+        _controller.NewGame((int)numX.Value, (int)numY.Value);
+        UpdateScoreLabel();
     }
 
     private void BtnNouveau_Click(object? sender, EventArgs e)
     {
-        InitialiserPlateau();
+        _controller.NewGame((int)numX.Value, (int)numY.Value);
+        UpdateScoreLabel();
     }
 
-    private void PlateauPanel_Paint(object? sender, PaintEventArgs e)
+    private void OnPlayerChanged(Player player)
     {
-        Graphics g = e.Graphics;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-        // Calculer la taille des cellules pour s'adapter au panel
-        int availableWidth = plateauPanel.Width - 2 * margin;
-        int availableHeight = plateauPanel.Height - 2 * margin;
-        cellSize = Math.Min(availableWidth / (gridX - 1), availableHeight / (gridY - 1));
-
-        // Dessiner les lignes verticales
-        Pen linePen = new Pen(Color.Black, 2);
-        for (int x = 0; x < gridX; x++)
-        {
-            int xPos = margin + x * cellSize;
-            g.DrawLine(linePen, xPos, margin, xPos, margin + (gridY - 1) * cellSize);
-        }
-
-        // Dessiner les lignes horizontales
-        for (int y = 0; y < gridY; y++)
-        {
-            int yPos = margin + y * cellSize;
-            g.DrawLine(linePen, margin, yPos, margin + (gridX - 1) * cellSize, yPos);
-        }
-
-        // Dessiner les points placés
-        int pointRadius = cellSize / 4;
-        for (int x = 0; x < gridX; x++)
-        {
-            for (int y = 0; y < gridY; y++)
-            {
-                if (plateau[x, y] != 0)
-                {
-                    int xPos = margin + x * cellSize;
-                    int yPos = margin + y * cellSize;
-
-                    Brush brush = plateau[x, y] == 1 ? Brushes.Blue : Brushes.Red;
-                    g.FillEllipse(brush,
-                        xPos - pointRadius,
-                        yPos - pointRadius,
-                        pointRadius * 2,
-                        pointRadius * 2);
-
-                    // Bordure du point
-                    g.DrawEllipse(Pens.Black,
-                        xPos - pointRadius,
-                        yPos - pointRadius,
-                        pointRadius * 2,
-                        pointRadius * 2);
-                }
-            }
-        }
-
-        linePen.Dispose();
+        labelJoueur.Text = $"Tour: {player.Name}";
+        labelJoueur.ForeColor = player.Color;
     }
 
-    private void PlateauPanel_MouseClick(object? sender, MouseEventArgs e)
+    private void OnScoreChanged(Player player, int newScore)
     {
-        // Trouver l'intersection la plus proche
-        int clickX = e.X - margin;
-        int clickY = e.Y - margin;
-
-        // Arrondir à l'intersection la plus proche
-        int gridPosX = (int)Math.Round((double)clickX / cellSize);
-        int gridPosY = (int)Math.Round((double)clickY / cellSize);
-
-        // Vérifier si le clic est proche d'une intersection (tolérance)
-        int tolerance = cellSize / 3;
-        int exactX = gridPosX * cellSize;
-        int exactY = gridPosY * cellSize;
-
-        if (Math.Abs(clickX - exactX) <= tolerance && Math.Abs(clickY - exactY) <= tolerance)
-        {
-            // Vérifier les limites
-            if (gridPosX >= 0 && gridPosX < gridX && gridPosY >= 0 && gridPosY < gridY)
-            {
-                // Vérifier si l'intersection est libre
-                if (plateau[gridPosX, gridPosY] == 0)
-                {
-                    plateau[gridPosX, gridPosY] = joueurActuel;
-                    joueurActuel = joueurActuel == 1 ? 2 : 1;
-                    MettreAJourLabelJoueur();
-                    plateauPanel.Invalidate();
-                }
-            }
-        }
+        UpdateScoreLabel();
+        MessageBox.Show(
+            $"{player.Name} a marqué un point!\n5 points alignés!",
+            "Point marqué!",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
-    private void MettreAJourLabelJoueur()
+    private void UpdateScoreLabel()
     {
-        labelJoueur.Text = $"Tour: Joueur {joueurActuel}";
-        labelJoueur.ForeColor = joueurActuel == 1 ? Color.Blue : Color.Red;
+        labelScore.Text = _controller.GetScoreText();
     }
 }

@@ -10,10 +10,13 @@ public class GameController
 
     public event Action? OnGameUpdated;
     public event Action<Player>? OnPlayerChanged;
+    public event Action<Player, int>? OnScoreChanged;
 
     public Game CurrentGame => _game;
     public Player CurrentPlayer => _game.CurrentPlayer;
     public Board Board => _game.Board;
+    public List<Player> Players => _game.Players;
+    public List<Line> ScoredLines => _game.ScoredLines;
 
     public GameController()
     {
@@ -45,6 +48,7 @@ public class GameController
     public bool HandleClick(int clickX, int clickY, int margin, int cellSize)
     {
         int tolerance = cellSize / 3;
+        Player playerBeforeMove = _game.CurrentPlayer;
 
         var intersection = _gameService.GetNearestIntersection(
             clickX, clickY,
@@ -54,16 +58,30 @@ public class GameController
 
         if (intersection.HasValue)
         {
+            int scoreBefore = playerBeforeMove.Score;
             bool placed = _gameService.PlacePoint(_game, intersection.Value.gridX, intersection.Value.gridY);
 
             if (placed)
             {
                 OnGameUpdated?.Invoke();
                 OnPlayerChanged?.Invoke(_game.CurrentPlayer);
+
+                // Vérifier si le score a changé
+                if (playerBeforeMove.Score > scoreBefore)
+                {
+                    OnScoreChanged?.Invoke(playerBeforeMove, playerBeforeMove.Score);
+                }
+
                 return true;
             }
         }
 
         return false;
+    }
+
+    public string GetScoreText()
+    {
+        var scores = string.Join(" | ", _game.Players.Select(p => $"{p.Name}: {p.Score}"));
+        return scores;
     }
 }

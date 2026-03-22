@@ -5,12 +5,14 @@ public class Point
     public int X { get; set; }
     public int Y { get; set; }
     public Player? Owner { get; set; }
+    public bool IsPartOfScoredLine { get; set; }
 
     public Point(int x, int y, Player? owner = null)
     {
         X = x;
         Y = y;
         Owner = owner;
+        IsPartOfScoredLine = false;
     }
 
     public bool IsEmpty => Owner == null;

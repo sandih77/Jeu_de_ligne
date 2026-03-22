@@ -27,7 +27,14 @@ public class Board
 
     public void Reset()
     {
-        InitializeGrid();
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                Grid[x, y].Owner = null;
+                Grid[x, y].IsPartOfScoredLine = false;
+            }
+        }
     }
 
     public Point? GetPoint(int x, int y)

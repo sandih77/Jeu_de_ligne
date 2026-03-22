@@ -7,6 +7,7 @@ public class Game
     public Player CurrentPlayer { get; private set; }
     public bool IsFinished { get; set; }
     public Player? Winner { get; set; }
+    public List<Line> ScoredLines { get; private set; }
 
     public Game(int boardWidth, int boardHeight, List<Player> players)
     {
@@ -15,6 +16,7 @@ public class Game
         CurrentPlayer = players[0];
         IsFinished = false;
         Winner = null;
+        ScoredLines = new List<Line>();
     }
 
     public void NextTurn()
@@ -30,11 +32,23 @@ public class Game
         CurrentPlayer = Players[0];
         IsFinished = false;
         Winner = null;
+        ScoredLines.Clear();
+        foreach (var player in Players)
+        {
+            player.ResetScore();
+        }
     }
 
     public void Resize(int width, int height)
     {
         Board = new Board(width, height);
         Reset();
+    }
+
+    public void AddScoredLine(Line line)
+    {
+        ScoredLines.Add(line);
+        line.Owner.AddPoint();
+        line.MarkAsScored();
     }
 }
