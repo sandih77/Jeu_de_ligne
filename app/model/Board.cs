@@ -78,4 +78,17 @@ public class Board
         }
         return placedPoints;
     }
+
+    public bool RemovePoint(int x, int y)
+    {
+        if (!IsValidPosition(x, y))
+            return false;
+
+        if (Grid[x, y].IsEmpty)
+            return false;
+
+        Grid[x, y].Owner = null;
+        Grid[x, y].ScoredDirections.Clear();
+        return true;
+    }
 }

@@ -8,6 +8,7 @@ public class Game
     public bool IsFinished { get; set; }
     public Player? Winner { get; set; }
     public List<Line> ScoredLines { get; private set; }
+    public bool CurrentPlayerHasDraggedCannon { get; set; }
 
     public Game(int boardWidth, int boardHeight, List<Player> players)
     {
@@ -17,6 +18,14 @@ public class Game
         IsFinished = false;
         Winner = null;
         ScoredLines = new List<Line>();
+        CurrentPlayerHasDraggedCannon = false;
+
+        // Initialiser les canons
+        if (players.Count >= 2)
+        {
+            players[0].InitializeCannon(CannonSide.Left, boardHeight);
+            players[1].InitializeCannon(CannonSide.Right, boardHeight);
+        }
     }
 
     public void NextTurn()
@@ -24,6 +33,8 @@ public class Game
         int currentIndex = Players.IndexOf(CurrentPlayer);
         int nextIndex = (currentIndex + 1) % Players.Count;
         CurrentPlayer = Players[nextIndex];
+        CurrentPlayerHasDraggedCannon = false;
+        CurrentPlayer.Cannon?.ResetForNewTurn();
     }
 
     public void Reset()
@@ -33,15 +44,21 @@ public class Game
         IsFinished = false;
         Winner = null;
         ScoredLines.Clear();
+        CurrentPlayerHasDraggedCannon = false;
         foreach (var player in Players)
         {
             player.ResetScore();
+            player.Cannon?.Reset(Board.Height);
         }
     }
 
     public void Resize(int width, int height)
     {
         Board = new Board(width, height);
+        foreach (var player in Players)
+        {
+            player.Cannon?.Reset(height);
+        }
         Reset();
     }
 

@@ -14,6 +14,15 @@ public class GameService
         (1, -1)   // Diagonale /
     };
 
+    private readonly CannonService _cannonService;
+
+    public CannonService CannonService => _cannonService;
+
+    public GameService()
+    {
+        _cannonService = new CannonService();
+    }
+
     public Game CreateNewGame(int boardWidth, int boardHeight)
     {
         var players = CreateDefaultPlayers();
@@ -310,5 +319,26 @@ public class GameService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Fire the current player's cannon and advance the turn.
+    /// </summary>
+    public CannonFireResult? FireCannon(Game game, int speed)
+    {
+        if (game.IsFinished)
+            return null;
+
+        var cannon = game.CurrentPlayer.Cannon;
+        if (cannon == null)
+            return null;
+
+        var result = _cannonService.Fire(game, cannon, speed);
+        _cannonService.ApplyFireResult(game, result);
+
+        cannon.HasFiredThisTurn = true;
+        game.NextTurn();
+
+        return result;
     }
 }
