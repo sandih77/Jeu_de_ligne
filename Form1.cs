@@ -136,11 +136,11 @@ public partial class Form1 : Form
     private void OnScoreChanged(Player player, int newScore)
     {
         UpdateScoreLabel();
-        MessageBox.Show(
-            $"{player.Name} a marqué un point!\n5 points alignés!",
-            "Point marqué!",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        // MessageBox.Show(
+        //     $"{player.Name} a marqué un point!\n5 points alignés!",
+        //     "Point marqué!",
+        //     MessageBoxButtons.OK,
+        //     MessageBoxIcon.Information);
     }
 
     private void UpdateScoreLabel()

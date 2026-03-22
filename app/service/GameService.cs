@@ -219,8 +219,9 @@ public class GameService
                 if (!LineIntersectsOpponentLines(line, game))
                 {
                     newLines.Add(line);
+                    break; // Trouvé une ligne valide, on arrête pour cette direction
                 }
-                break; // Une seule ligne par direction pour cette vérification
+                // Si elle coupe une ligne adverse, continuer à chercher d'autres segments
             }
         }
 
@@ -252,8 +253,6 @@ public class GameService
     private bool DoLinesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
     {
         // Utiliser la détection d'intersection géométrique de segments
-        // Les segments peuvent se croiser entre les points de la grille
-
         double x1 = line1Start.X, y1 = line1Start.Y;
         double x2 = line1End.X, y2 = line1End.Y;
         double x3 = line2Start.X, y3 = line2Start.Y;
@@ -271,7 +270,6 @@ public class GameService
         double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
 
         // Les segments se croisent si t et u sont strictement entre 0 et 1 (exclusif)
-        // On exclut les extrémités pour permettre les lignes qui se touchent aux bouts
         const double epsilon = 0.0001;
         return t > epsilon && t < (1 - epsilon) && u > epsilon && u < (1 - epsilon);
     }
