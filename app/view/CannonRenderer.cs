@@ -6,10 +6,10 @@ using System.Drawing.Drawing2D;
 
 public static class CannonRenderer
 {
-    public const int CannonWidth = 45;
-    public const int CannonHeight = 28;
-    public const int BarrelLength = 35;
-    public const int BarrelWidth = 10;
+    public const int CannonWidth = 55;
+    public const int CannonHeight = 35;
+    public const int BarrelLength = 45;
+    public const int BarrelWidth = 14;
 
     /// <summary>
     /// Dessine un canon a la position specifiee.
@@ -35,92 +35,128 @@ public static class CannonRenderer
                                        BarrelLength, BarrelWidth);
         }
 
-        // Ombre du canon
-        Rectangle shadowRect = new Rectangle(bodyRect.X + 3, bodyRect.Y + 3, bodyRect.Width, bodyRect.Height);
-        using (var shadowBrush = new SolidBrush(Color.FromArgb(50, 0, 0, 0)))
+        // Ombre du canon plus prononcée
+        Rectangle shadowRect = new Rectangle(bodyRect.X + 4, bodyRect.Y + 4, bodyRect.Width, bodyRect.Height);
+        using (var shadowBrush = new SolidBrush(Color.FromArgb(80, 0, 0, 0)))
         {
-            g.FillRoundedRectangle(shadowBrush, shadowRect, 6);
+            g.FillRoundedRectangle(shadowBrush, shadowRect, 8);
         }
 
-        // Corps avec degrade metallique
+        // Corps avec degrade metallique moderne
         using (var bodyBrush = new LinearGradientBrush(bodyRect,
-            Color.FromArgb(80, 80, 90),
-            Color.FromArgb(50, 50, 60),
+            Color.FromArgb(90, 95, 105),
+            Color.FromArgb(55, 60, 70),
             LinearGradientMode.Vertical))
         {
-            g.FillRoundedRectangle(bodyBrush, bodyRect, 6);
+            g.FillRoundedRectangle(bodyBrush, bodyRect, 8);
         }
 
         // Reflet sur le corps
-        Rectangle highlightRect = new Rectangle(bodyRect.X + 2, bodyRect.Y + 2, bodyRect.Width - 4, bodyRect.Height / 3);
+        Rectangle highlightRect = new Rectangle(bodyRect.X + 3, bodyRect.Y + 3, bodyRect.Width - 6, bodyRect.Height / 3);
         using (var highlightBrush = new LinearGradientBrush(highlightRect,
-            Color.FromArgb(60, 255, 255, 255),
+            Color.FromArgb(80, 255, 255, 255),
             Color.FromArgb(0, 255, 255, 255),
             LinearGradientMode.Vertical))
         {
-            g.FillRoundedRectangle(highlightBrush, highlightRect, 4);
+            g.FillRoundedRectangle(highlightBrush, highlightRect, 5);
         }
 
         // Canon (barrel) avec degrade
         using (var barrelBrush = new LinearGradientBrush(barrelRect,
-            Color.FromArgb(100, 100, 110),
-            Color.FromArgb(60, 60, 70),
+            Color.FromArgb(110, 115, 125),
+            Color.FromArgb(70, 75, 85),
             LinearGradientMode.Vertical))
         {
-            g.FillRoundedRectangle(barrelBrush, barrelRect, 3);
+            g.FillRoundedRectangle(barrelBrush, barrelRect, 4);
+        }
+
+        // Reflet sur le canon
+        Rectangle barrelHighlight = new Rectangle(barrelRect.X + 2, barrelRect.Y + 2, barrelRect.Width - 4, barrelRect.Height / 4);
+        using (var barrelHighlightBrush = new LinearGradientBrush(barrelHighlight,
+            Color.FromArgb(50, 255, 255, 255),
+            Color.FromArgb(0, 255, 255, 255),
+            LinearGradientMode.Vertical))
+        {
+            g.FillRoundedRectangle(barrelHighlightBrush, barrelHighlight, 2);
         }
 
         // Bordure du canon
-        using (var barrelPen = new Pen(Color.FromArgb(40, 40, 50), 1))
+        using (var barrelPen = new Pen(Color.FromArgb(30, 35, 45), 2))
         {
-            g.DrawRoundedRectangle(barrelPen, barrelRect, 3);
+            g.DrawRoundedRectangle(barrelPen, barrelRect, 4);
         }
 
         // Embouchure du canon
         Rectangle muzzleRect;
         if (cannon.Side == CannonSide.Left)
         {
-            muzzleRect = new Rectangle(barrelRect.Right - 6, barrelRect.Y - 2, 6, barrelRect.Height + 4);
+            muzzleRect = new Rectangle(barrelRect.Right - 8, barrelRect.Y - 3, 8, barrelRect.Height + 6);
         }
         else
         {
-            muzzleRect = new Rectangle(barrelRect.X, barrelRect.Y - 2, 6, barrelRect.Height + 4);
+            muzzleRect = new Rectangle(barrelRect.X, barrelRect.Y - 3, 8, barrelRect.Height + 6);
         }
-        using (var muzzleBrush = new SolidBrush(Color.FromArgb(70, 70, 80)))
+        using (var muzzleBrush = new SolidBrush(Color.FromArgb(60, 65, 75)))
         {
-            g.FillRoundedRectangle(muzzleBrush, muzzleRect, 2);
+            g.FillRoundedRectangle(muzzleBrush, muzzleRect, 3);
         }
 
-        // Indicateur de couleur du joueur (cercle colore)
-        int indicatorSize = 14;
+        // Indicateur de couleur du joueur (cercle colore plus grand)
+        int indicatorSize = 18;
         Rectangle indicatorRect = new Rectangle(
             bodyRect.X + (bodyRect.Width - indicatorSize) / 2,
             bodyRect.Y + (bodyRect.Height - indicatorSize) / 2,
             indicatorSize, indicatorSize);
 
-        using (var indicatorBrush = new SolidBrush(cannon.Owner.Color))
+        // Effet de lueur autour de l'indicateur
+        using (var glowBrush = new SolidBrush(Color.FromArgb(50, cannon.Owner.Color)))
         {
-            g.FillEllipse(indicatorBrush, indicatorRect);
+            g.FillEllipse(glowBrush,
+                indicatorRect.X - 3, indicatorRect.Y - 3,
+                indicatorSize + 6, indicatorSize + 6);
         }
+
+        // Dégradé radial pour l'indicateur
+        using (var path = new GraphicsPath())
+        {
+            path.AddEllipse(indicatorRect);
+            using (var indicatorBrush = new PathGradientBrush(path))
+            {
+                indicatorBrush.CenterColor = Color.FromArgb(
+                    Math.Min(255, cannon.Owner.Color.R + 60),
+                    Math.Min(255, cannon.Owner.Color.G + 60),
+                    Math.Min(255, cannon.Owner.Color.B + 60));
+                indicatorBrush.SurroundColors = new[] { cannon.Owner.Color };
+                g.FillEllipse(indicatorBrush, indicatorRect);
+            }
+        }
+
         using (var indicatorPen = new Pen(Color.White, 2))
         {
             g.DrawEllipse(indicatorPen, indicatorRect);
         }
 
         // Bordure du corps (active/inactive)
-        Color borderColor = isActive ? (isDragging ? Color.Yellow : Color.LimeGreen) : Color.FromArgb(40, 40, 50);
-        int borderWidth = isActive ? 3 : 1;
+        Color borderColor = isActive ? (isDragging ? Color.Gold : Color.LimeGreen) : Color.FromArgb(40, 45, 55);
+        int borderWidth = isActive ? 3 : 2;
         using (var borderPen = new Pen(borderColor, borderWidth))
         {
-            g.DrawRoundedRectangle(borderPen, bodyRect, 6);
+            g.DrawRoundedRectangle(borderPen, bodyRect, 8);
         }
 
         // Effet de brillance si actif
         if (isActive && !isDragging)
         {
-            using (var glowPen = new Pen(Color.FromArgb(50, Color.LimeGreen), 5))
+            using (var glowPen = new Pen(Color.FromArgb(80, Color.LimeGreen), 6))
             {
-                g.DrawRoundedRectangle(glowPen, bodyRect, 6);
+                g.DrawRoundedRectangle(glowPen, bodyRect, 8);
+            }
+        }
+        else if (isDragging)
+        {
+            using (var glowPen = new Pen(Color.FromArgb(100, Color.Gold), 7))
+            {
+                g.DrawRoundedRectangle(glowPen, bodyRect, 8);
             }
         }
     }

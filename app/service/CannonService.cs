@@ -13,7 +13,7 @@ public class CannonService
         // Vitesse 1-9 correspond proportionnellement a la largeur du plateau
         // Vitesse 9 = largeur complete, Vitesse 1 = 1/9 de la largeur
         double proportion = speed / 9.0;
-        int distance = (int)Math.Round((boardWidth - 1) * proportion);
+        int distance = (int)Math.Floor(boardWidth * proportion) - 1;
 
         if (cannon.Side == CannonSide.Left)
         {

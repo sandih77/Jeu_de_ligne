@@ -85,7 +85,7 @@ public class GameController
         OnPlayerChanged?.Invoke(_game.CurrentPlayer);
     }
 
-    public bool HandleClick(int clickX, int clickY, int margin, int cellSize)
+    public bool HandleClick(int clickX, int clickY, int marginLeft, int marginTop, int cellSize)
     {
         // Si le joueur a deplace le canon, il ne peut plus placer de points
         if (_game.CurrentPlayerHasDraggedCannon)
@@ -96,7 +96,7 @@ public class GameController
 
         var intersection = _gameService.GetNearestIntersection(
             clickX, clickY,
-            margin, cellSize,
+            marginLeft, marginTop, cellSize,
             _game.Board.Width, _game.Board.Height,
             tolerance);
 

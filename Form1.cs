@@ -1,5 +1,6 @@
 namespace Projet_Jeu_De_Ligne;
 
+using System.Drawing.Drawing2D;
 using app.controller;
 using app.model;
 using app.view;
@@ -26,185 +27,231 @@ public partial class Form1 : Form
 
     private void InitializeComponent()
     {
-        this.Text = "Jeu de Ligne - 5 points alignes";
-        this.Size = new Size(850, 750);
+        this.Text = "Jeu de Ligne - 5 points alignés";
+        this.Size = new Size(1180, 870);
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.MinimumSize = new Size(700, 600);
+        this.MinimumSize = new Size(1150, 800);
+        this.BackColor = Color.FromArgb(240, 242, 245);
 
-        // Activer la capture des touches clavier
         this.KeyPreview = true;
         this.KeyDown += Form1_KeyDown;
 
         // Panel de configuration avec design moderne
         Panel configPanel = new Panel
         {
-            Location = new System.Drawing.Point(10, 10),
-            Size = new Size(820, 90),
-            BackColor = Color.FromArgb(60, 60, 70),
+            Location = new System.Drawing.Point(15, 15),
+            Size = new Size(1140, 105),
+            BackColor = Color.FromArgb(255, 255, 255),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
 
+        // Ajouter ombre et bordure arrondie via Paint event
+        configPanel.Paint += (s, e) =>
+        {
+            // Ombre
+            Rectangle shadowRect = new Rectangle(3, 3, configPanel.Width - 3, configPanel.Height - 3);
+            using (var shadowBrush = new SolidBrush(Color.FromArgb(25, 0, 0, 0)))
+            {
+                e.Graphics.FillRoundedRectangle(shadowBrush, shadowRect, 8);
+            }
+
+            // Fond blanc avec bordure
+            Rectangle bgRect = new Rectangle(0, 0, configPanel.Width - 3, configPanel.Height - 3);
+            using (var bgBrush = new LinearGradientBrush(bgRect,
+                Color.FromArgb(255, 255, 255),
+                Color.FromArgb(248, 250, 252),
+                LinearGradientMode.Vertical))
+            {
+                e.Graphics.FillRoundedRectangle(bgBrush, bgRect, 8);
+            }
+
+            // Bordure subtile
+            using (var borderPen = new Pen(Color.FromArgb(200, 210, 220), 1))
+            {
+                e.Graphics.DrawRoundedRectangle(borderPen, bgRect, 8);
+            }
+        };
+
+        int marginX = 20;
+        int marginY = 18;
+        int spacingX = 12;
+        int currentX = marginX;
+
+        // Colonnes
         Label labelX = new Label
         {
             Text = "Colonnes:",
-            Location = new System.Drawing.Point(10, 15),
             AutoSize = true,
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9)
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Location = new System.Drawing.Point(currentX, marginY + 2)
         };
+        currentX += labelX.Width + spacingX;
 
         numX = new NumericUpDown
         {
-            Location = new System.Drawing.Point(80, 12),
-            Size = new Size(55, 25),
+            Size = new Size(65, 28),
             Minimum = 5,
             Maximum = 40,
             Value = 10,
-            Font = new Font("Segoe UI", 9)
+            Font = new Font("Segoe UI", 10),
+            Location = new System.Drawing.Point(currentX, marginY)
         };
+        currentX += numX.Width + spacingX + 10;
 
+        // Lignes
         Label labelY = new Label
         {
             Text = "Lignes:",
-            Location = new System.Drawing.Point(145, 15),
             AutoSize = true,
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9)
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Location = new System.Drawing.Point(currentX, marginY + 2)
         };
+        currentX += labelY.Width + spacingX;
 
         numY = new NumericUpDown
         {
-            Location = new System.Drawing.Point(200, 12),
-            Size = new Size(55, 25),
+            Size = new Size(65, 28),
             Minimum = 5,
             Maximum = 40,
             Value = 10,
-            Font = new Font("Segoe UI", 9)
+            Font = new Font("Segoe UI", 10),
+            Location = new System.Drawing.Point(currentX, marginY)
         };
+        currentX += numY.Width + spacingX + 18;
 
+        // Bouton Nouvelle Partie
         Button btnNouveau = new Button
         {
-            Text = "Nouvelle Partie",
-            Location = new System.Drawing.Point(270, 10),
-            Size = new Size(100, 28),
+            Text = "🎮 Nouvelle Partie",
+            Size = new Size(165, 36),
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(80, 180, 80),
+            BackColor = Color.FromArgb(16, 185, 129),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand,
+            Location = new System.Drawing.Point(currentX, marginY - 2)
         };
         btnNouveau.FlatAppearance.BorderSize = 0;
+        btnNouveau.FlatAppearance.BorderColor = Color.FromArgb(16, 185, 129);
         btnNouveau.Click += BtnNouveau_Click;
+        currentX += btnNouveau.Width + 25;
 
+        // Label Joueur
+        labelJoueur = new Label
+        {
+            Text = "🎯 Tour: Joueur 1",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            ForeColor = Color.DodgerBlue,
+            Location = new System.Drawing.Point(currentX, marginY + 4)
+        };
+
+        // Sauvegarde - première ligne, à droite
+        int saveX = 870;
         Button btnSave = new Button
         {
-            Text = "Sauvegarder",
-            Location = new System.Drawing.Point(580, 10),
-            Size = new Size(90, 28),
+            Text = "💾 Sauvegarder",
+            Size = new Size(125, 36),
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(70, 130, 180),
+            BackColor = Color.FromArgb(59, 130, 246),
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            Location = new System.Drawing.Point(saveX, marginY - 2)
         };
         btnSave.FlatAppearance.BorderSize = 0;
         btnSave.Click += BtnSave_Click;
 
         Button btnLoad = new Button
         {
-            Text = "Charger",
-            Location = new System.Drawing.Point(680, 10),
-            Size = new Size(80, 28),
+            Text = "📂 Charger",
+            Size = new Size(110, 36),
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(150, 100, 50),
+            BackColor = Color.FromArgb(139, 92, 246),
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            Location = new System.Drawing.Point(saveX + 135, marginY - 2)
         };
         btnLoad.FlatAppearance.BorderSize = 0;
         btnLoad.Click += BtnLoad_Click;
 
+        // Score - deuxième ligne
+        labelScore = new Label
+        {
+            Text = "Joueur 1: 0  |  Joueur 2: 0",
+            Size = new Size(280, 25),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            ForeColor = Color.FromArgb(16, 185, 129),
+            Location = new System.Drawing.Point(marginX, marginY + 48),
+            BackColor = Color.Transparent
+        };
+
+        // Canon Hint - deuxième ligne
+        labelCannonHint = new Label
+        {
+            Text = "💣 Canon: Glissez puis Ctrl+[1-9] pour tirer",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9, FontStyle.Italic),
+            ForeColor = Color.FromArgb(120, 130, 140),
+            Location = new System.Drawing.Point(marginX + 300, marginY + 51),
+            BackColor = Color.Transparent,
+            Visible = true
+        };
+
+        // Canon Status - deuxième ligne, même position que hint (caché par défaut)
+        labelCannonStatus = new Label
+        {
+            Text = "",
+            Size = new Size(380, 25),
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = Color.Orange,
+            Location = new System.Drawing.Point(marginX + 300, marginY + 48),
+            BackColor = Color.White,
+            Visible = false
+        };
+
         chkAutoSave = new CheckBox
         {
             Text = "Auto-save",
-            Location = new System.Drawing.Point(580, 42),
             AutoSize = true,
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 8),
-            Checked = false
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 9),
+            Checked = false,
+            Location = new System.Drawing.Point(saveX, marginY + 42),
+            BackColor = Color.Transparent
         };
         chkAutoSave.CheckedChanged += ChkAutoSave_Changed;
 
         labelSaveStatus = new Label
         {
             Text = "",
-            Location = new System.Drawing.Point(680, 44),
-            Size = new Size(130, 20),
+            Size = new Size(140, 22),
             Font = new Font("Segoe UI", 8),
-            ForeColor = Color.LightGreen
+            ForeColor = Color.FromArgb(16, 185, 129),
+            Location = new System.Drawing.Point(saveX + 135, marginY + 44),
+            BackColor = Color.Transparent
         };
 
-        labelJoueur = new Label
+        // Ajouter tous les composants au panel (ordre important pour z-index)
+        configPanel.Controls.AddRange(new Control[]
         {
-            Text = "Tour: Joueur 1",
-            Location = new System.Drawing.Point(400, 12),
-            AutoSize = true,
-            Font = new Font("Segoe UI", 11, FontStyle.Bold),
-            ForeColor = Color.DodgerBlue
-        };
+        labelX, numX, labelY, numY, btnNouveau, labelJoueur,
+        btnSave, btnLoad, chkAutoSave, labelSaveStatus,
+        labelScore, labelCannonHint, labelCannonStatus // labelCannonStatus en dernier pour être au-dessus
+        });
 
-        labelScore = new Label
-        {
-            Text = "Joueur 1: 0 | Joueur 2: 0",
-            Location = new System.Drawing.Point(10, 50),
-            Size = new Size(350, 25),
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.LimeGreen
-        };
-
-        // Instructions du canon
-        labelCannonHint = new Label
-        {
-            Text = "Canon: Glissez puis Ctrl+[1-9] pour tirer",
-            Location = new System.Drawing.Point(10, 70),
-            AutoSize = true,
-            Font = new Font("Segoe UI", 8, FontStyle.Italic),
-            ForeColor = Color.FromArgb(180, 180, 190)
-        };
-
-        // Status du canon (feedback)
-        labelCannonStatus = new Label
-        {
-            Text = "",
-            Location = new System.Drawing.Point(400, 50),
-            Size = new Size(400, 35),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            ForeColor = Color.Orange
-        };
-
-        configPanel.Controls.Add(labelX);
-        configPanel.Controls.Add(numX);
-        configPanel.Controls.Add(labelY);
-        configPanel.Controls.Add(numY);
-        configPanel.Controls.Add(btnNouveau);
-        configPanel.Controls.Add(btnSave);
-        configPanel.Controls.Add(btnLoad);
-        configPanel.Controls.Add(chkAutoSave);
-        configPanel.Controls.Add(labelSaveStatus);
-        configPanel.Controls.Add(labelJoueur);
-        configPanel.Controls.Add(labelScore);
-        configPanel.Controls.Add(labelCannonHint);
-        configPanel.Controls.Add(labelCannonStatus);
-
-        // Panel du plateau utilisant PlateauView
+        // Plateau
         _plateauView = new PlateauView(_controller)
         {
-            Location = new System.Drawing.Point(10, 110),
-            Size = new Size(820, 590),
+            Location = new System.Drawing.Point(15, 130),
+            Size = new Size(1140, 690),
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        // S'abonner aux evenements du controller
+        // Abonnements events
         _controller.OnPlayerChanged += OnPlayerChanged;
         _controller.OnScoreChanged += OnScoreChanged;
         _controller.OnCannonFired += OnCannonFired;
@@ -214,18 +261,17 @@ public partial class Form1 : Form
         this.Controls.Add(configPanel);
         this.Controls.Add(_plateauView);
 
-        // Initialiser le jeu
         _controller.NewGame((int)numX.Value, (int)numY.Value);
         UpdateScoreLabel();
 
-        // Initialiser la base de donnees
         _ = _controller.InitializeDatabaseAsync();
 
-        // Timer pour les messages temporaires
         _feedbackTimer = new System.Windows.Forms.Timer { Interval = 2500 };
         _feedbackTimer.Tick += (s, e) =>
         {
             labelCannonStatus.Text = "";
+            labelCannonStatus.Visible = false;
+            labelCannonHint.Visible = true;
             _feedbackTimer.Stop();
         };
     }
@@ -268,6 +314,8 @@ public partial class Form1 : Form
     {
         labelCannonStatus.Text = message;
         labelCannonStatus.ForeColor = color;
+        labelCannonStatus.Visible = true;
+        labelCannonHint.Visible = false;
         _feedbackTimer?.Stop();
         _feedbackTimer?.Start();
     }
@@ -277,23 +325,25 @@ public partial class Form1 : Form
         _controller.NewGame((int)numX.Value, (int)numY.Value);
         UpdateScoreLabel();
         labelCannonStatus.Text = "";
+        labelCannonStatus.Visible = false;
+        labelCannonHint.Visible = true;
     }
 
     private void OnPlayerChanged(Player player)
     {
-        labelJoueur.Text = $"Tour: {player.Name}";
+        labelJoueur.Text = $"🎯 Tour: {player.Name}";
         labelJoueur.ForeColor = player.Color;
 
         // Indicateur si le joueur peut encore placer ou doit tirer
         if (_controller.HasDraggedCannonThisTurn)
         {
-            labelCannonHint.Text = "Canon vise - Appuyez Ctrl+[1-9] pour tirer!";
-            labelCannonHint.ForeColor = Color.Yellow;
+            labelCannonHint.Text = "💥 Canon visé - Appuyez Ctrl+[1-9] pour tirer!";
+            labelCannonHint.ForeColor = Color.FromArgb(255, 180, 0);
         }
         else
         {
-            labelCannonHint.Text = "Canon: Glissez puis Ctrl+[1-9] pour tirer";
-            labelCannonHint.ForeColor = Color.FromArgb(180, 180, 190);
+            labelCannonHint.Text = "💣 Canon: Glissez puis Ctrl+[1-9] pour tirer";
+            labelCannonHint.ForeColor = Color.FromArgb(120, 130, 140);
         }
     }
 
@@ -310,13 +360,13 @@ public partial class Form1 : Form
     private void OnSaveStatusChanged(string message)
     {
         labelSaveStatus.Text = message;
-        labelSaveStatus.ForeColor = Color.LightGreen;
+        labelSaveStatus.ForeColor = Color.FromArgb(16, 185, 129);
     }
 
     private void OnSaveError(string message)
     {
         labelSaveStatus.Text = message;
-        labelSaveStatus.ForeColor = Color.Red;
+        labelSaveStatus.ForeColor = Color.FromArgb(239, 68, 68);
     }
 
     private async void BtnSave_Click(object? sender, EventArgs e)

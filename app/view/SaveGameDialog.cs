@@ -15,55 +15,58 @@ public class SaveGameDialog : Form
 
     private void InitializeComponent()
     {
-        this.Text = "Nouvelle Sauvegarde";
-        this.Size = new Size(350, 150);
+        this.Text = "💾 Nouvelle Sauvegarde";
+        this.Size = new Size(450, 200);
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.StartPosition = FormStartPosition.CenterParent;
         this.MaximizeBox = false;
         this.MinimizeBox = false;
-        this.BackColor = Color.FromArgb(45, 45, 50);
+        this.BackColor = Color.FromArgb(248, 250, 252);
 
         Label label = new Label
         {
-            Text = "Nom de la partie:",
-            Location = new Point(20, 20),
-            Size = new Size(120, 20),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10)
+            Text = "📝 Nom de la partie:",
+            Location = new Point(30, 30),
+            Size = new Size(180, 25),
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold)
         };
 
         txtName = new TextBox
         {
-            Location = new Point(20, 45),
-            Size = new Size(290, 25),
-            Font = new Font("Segoe UI", 10),
-            Text = $"Partie_{DateTime.Now:yyyyMMdd_HHmmss}"
+            Location = new Point(30, 65),
+            Size = new Size(380, 35),
+            Font = new Font("Segoe UI", 11),
+            Text = $"Partie_{DateTime.Now:yyyyMMdd_HHmmss}",
+            BorderStyle = BorderStyle.FixedSingle
         };
 
         Button btnOk = new Button
         {
-            Text = "Creer",
-            Location = new Point(130, 80),
-            Size = new Size(80, 30),
+            Text = "✅ Créer",
+            Location = new Point(150, 120),
+            Size = new Size(120, 40),
             DialogResult = DialogResult.OK,
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(80, 180, 80),
+            BackColor = Color.FromArgb(16, 185, 129),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold)
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnOk.FlatAppearance.BorderSize = 0;
         btnOk.Click += (s, e) => SaveName = txtName.Text;
 
         Button btnCancel = new Button
         {
-            Text = "Annuler",
-            Location = new Point(220, 80),
-            Size = new Size(80, 30),
+            Text = "❌ Annuler",
+            Location = new Point(280, 120),
+            Size = new Size(120, 40),
             DialogResult = DialogResult.Cancel,
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(100, 100, 110),
+            BackColor = Color.FromArgb(156, 163, 175),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9)
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnCancel.FlatAppearance.BorderSize = 0;
 

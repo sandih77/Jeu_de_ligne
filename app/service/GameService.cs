@@ -295,12 +295,12 @@ public class GameService
 
     public (int gridX, int gridY)? GetNearestIntersection(
         int clickX, int clickY,
-        int margin, int cellSize,
+        int marginLeft, int marginTop, int cellSize,
         int gridWidth, int gridHeight,
         int tolerance)
     {
-        int relativeX = clickX - margin;
-        int relativeY = clickY - margin;
+        int relativeX = clickX - marginLeft;
+        int relativeY = clickY - marginTop;
 
         int gridPosX = (int)Math.Round((double)relativeX / cellSize);
         int gridPosY = (int)Math.Round((double)relativeY / cellSize);

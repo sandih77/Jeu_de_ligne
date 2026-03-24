@@ -26,32 +26,32 @@ public class LoadGameDialog : Form
 
     private void InitializeComponent()
     {
-        this.Text = "Charger une Partie";
-        this.Size = new Size(600, 450);
+        this.Text = "📂 Charger une Partie";
+        this.Size = new Size(750, 550);
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.StartPosition = FormStartPosition.CenterParent;
         this.MaximizeBox = false;
         this.MinimizeBox = false;
-        this.BackColor = Color.FromArgb(45, 45, 50);
+        this.BackColor = Color.FromArgb(248, 250, 252);
 
         // Label pour les parties
         Label lblGames = new Label
         {
-            Text = "Parties sauvegardees:",
-            Location = new DrawingPoint(20, 15),
-            Size = new Size(200, 20),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            Text = "📋 Parties sauvegardées:",
+            Location = new DrawingPoint(25, 20),
+            Size = new Size(250, 25),
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold)
         };
 
         // Liste des parties
         lstGames = new ListBox
         {
-            Location = new DrawingPoint(20, 40),
-            Size = new Size(250, 200),
-            Font = new Font("Segoe UI", 9),
-            BackColor = Color.FromArgb(60, 60, 70),
-            ForeColor = Color.White,
+            Location = new DrawingPoint(25, 55),
+            Size = new Size(300, 250),
+            Font = new Font("Segoe UI", 10),
+            BackColor = Color.White,
+            ForeColor = Color.FromArgb(40, 50, 60),
             BorderStyle = BorderStyle.FixedSingle
         };
         lstGames.SelectedIndexChanged += LstGames_SelectedIndexChanged;
@@ -59,44 +59,48 @@ public class LoadGameDialog : Form
         // Informations sur la partie selectionnee
         lblGameInfo = new Label
         {
-            Text = "Selectionnez une partie...",
-            Location = new DrawingPoint(20, 250),
-            Size = new Size(250, 60),
-            ForeColor = Color.LightGray,
-            Font = new Font("Segoe UI", 9)
+            Text = "Sélectionnez une partie...",
+            Location = new DrawingPoint(25, 315),
+            Size = new Size(300, 80),
+            ForeColor = Color.FromArgb(100, 110, 120),
+            Font = new Font("Segoe UI", 9),
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(10),
+            BackColor = Color.FromArgb(239, 246, 255)
         };
 
         // Label pour les tours
         Label lblTurns = new Label
         {
-            Text = "Tours disponibles:",
-            Location = new DrawingPoint(290, 15),
-            Size = new Size(200, 20),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            Text = "🔄 Tours disponibles:",
+            Location = new DrawingPoint(345, 20),
+            Size = new Size(250, 25),
+            ForeColor = Color.FromArgb(60, 70, 80),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold)
         };
 
         // Liste des tours
         lstTurns = new ListBox
         {
-            Location = new DrawingPoint(290, 40),
-            Size = new Size(280, 270),
-            Font = new Font("Segoe UI", 9),
-            BackColor = Color.FromArgb(60, 60, 70),
-            ForeColor = Color.White,
+            Location = new DrawingPoint(345, 55),
+            Size = new Size(370, 340),
+            Font = new Font("Segoe UI", 10),
+            BackColor = Color.White,
+            ForeColor = Color.FromArgb(40, 50, 60),
             BorderStyle = BorderStyle.FixedSingle
         };
 
         // Bouton charger tour
         btnLoadTurn = new Button
         {
-            Text = "Charger ce tour",
-            Location = new DrawingPoint(290, 320),
-            Size = new Size(130, 35),
+            Text = "✅ Charger ce tour",
+            Location = new DrawingPoint(345, 410),
+            Size = new Size(165, 45),
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(80, 180, 80),
+            BackColor = Color.FromArgb(16, 185, 129),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Cursor = Cursors.Hand,
             Enabled = false
         };
         btnLoadTurn.FlatAppearance.BorderSize = 0;
@@ -105,13 +109,14 @@ public class LoadGameDialog : Form
         // Bouton supprimer
         btnDelete = new Button
         {
-            Text = "Supprimer partie",
-            Location = new DrawingPoint(20, 320),
-            Size = new Size(130, 35),
+            Text = "🗑️ Supprimer",
+            Location = new DrawingPoint(25, 410),
+            Size = new Size(145, 45),
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(180, 80, 80),
+            BackColor = Color.FromArgb(239, 68, 68),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Cursor = Cursors.Hand,
             Enabled = false
         };
         btnDelete.FlatAppearance.BorderSize = 0;
@@ -120,14 +125,15 @@ public class LoadGameDialog : Form
         // Bouton fermer
         Button btnClose = new Button
         {
-            Text = "Fermer",
-            Location = new DrawingPoint(440, 320),
-            Size = new Size(130, 35),
+            Text = "❌ Fermer",
+            Location = new DrawingPoint(550, 410),
+            Size = new Size(165, 45),
             DialogResult = DialogResult.Cancel,
             FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(100, 100, 110),
+            BackColor = Color.FromArgb(156, 163, 175),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10)
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnClose.FlatAppearance.BorderSize = 0;
 
