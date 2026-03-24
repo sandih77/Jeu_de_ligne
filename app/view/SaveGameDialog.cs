@@ -16,7 +16,7 @@ public class SaveGameDialog : Form
     private void InitializeComponent()
     {
         this.Text = "💾 Nouvelle Sauvegarde";
-        this.Size = new Size(450, 200);
+        this.Size = new Size(450, 300);
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.StartPosition = FormStartPosition.CenterParent;
         this.MaximizeBox = false;
