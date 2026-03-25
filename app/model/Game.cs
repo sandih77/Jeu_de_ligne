@@ -10,7 +10,7 @@ public class Game
     public List<Line> ScoredLines { get; private set; }
     public bool CurrentPlayerHasDraggedCannon { get; set; }
 
-    public Game(int boardWidth, int boardHeight, List<Player> players)
+    public Game(int boardWidth, int boardHeight, List<Player> players, bool skipCannonInit = false)
     {
         Board = new Board(boardWidth, boardHeight);
         Players = players;
@@ -20,8 +20,8 @@ public class Game
         ScoredLines = new List<Line>();
         CurrentPlayerHasDraggedCannon = false;
 
-        // Initialiser les canons
-        if (players.Count >= 2)
+        // Initialiser les canons seulement si pas de skip (pour le chargement)
+        if (!skipCannonInit && players.Count >= 2)
         {
             players[0].InitializeCannon(CannonSide.Left, boardHeight);
             players[1].InitializeCannon(CannonSide.Right, boardHeight);

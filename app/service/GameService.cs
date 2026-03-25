@@ -134,19 +134,31 @@ public class GameService
 
             if (linePoints.Count >= 5)
             {
-                // Chercher des segments de 5 points non encore comptés dans cette direction
-                var newLines = FindNewLines(linePoints, game, dx, dy);
-                foreach (var line in newLines)
+                // Calculer combien de points cette séquence rapporte
+                int pointsEarned = CalculatePointsForSequence(linePoints.Count);
+
+                // Vérifier si cette séquence existe déjà et combien elle rapportait avant
+                int previousPoints = GetPreviousSequenceScore(linePoints, game, dx, dy);
+
+                // Si cette séquence rapporte plus de points qu'avant, ajouter la différence
+                int newPoints = pointsEarned - previousPoints;
+                if (newPoints > 0)
                 {
-                    game.AddScoredLine(line);
-                    // Marquer les points comme faisant partie d'une ligne scorée dans cette direction
-                    foreach (var point in line.Points)
-                    {
-                        point.MarkScoredInDirection(dx, dy);
-                    }
+                    // Créer et ajouter les nouvelles lignes correspondant aux nouveaux points
+                    AddNewScoredLines(linePoints, game, newPoints, dx, dy);
                 }
             }
         }
+    }
+
+    private int CalculatePointsForSequence(int length)
+    {
+        if (length < 5)
+            return 0;
+
+        // Formule : (longueur - 1) / 4
+        // 5 points → 1 ligne, 9 points → 2 lignes, 13 points → 3 lignes, etc.
+        return (length - 1) / 4;
     }
 
     private List<Point> GetLinePoints(Board board, int startX, int startY, int dx, int dy, Player player)
@@ -208,33 +220,78 @@ public class GameService
         return points;
     }
 
-    private List<Line> FindNewLines(List<Point> linePoints, Game game, int dx, int dy)
+    private int GetPreviousSequenceScore(List<Point> linePoints, Game game, int dx, int dy)
     {
-        var newLines = new List<Line>();
+        if (linePoints.Count == 0)
+            return 0;
 
-        // Parcourir tous les segments possibles de 5 points
-        for (int i = 0; i <= linePoints.Count - 5; i++)
+        var firstPoint = linePoints.First();
+        var lastPoint = linePoints.Last();
+
+        // Chercher une séquence existante qui a les mêmes extrémités
+        int totalScore = 0;
+        foreach (var scoredLine in game.ScoredLines)
         {
-            var segment = linePoints.Skip(i).Take(5).ToList();
+            if (scoredLine.Owner != firstPoint.Owner)
+                continue;
 
-            // Vérifier si ce segment contient des points déjà utilisés dans CETTE direction
-            bool allPointsAvailable = segment.All(p => !p.IsScoredInDirection(dx, dy));
-
-            if (allPointsAvailable)
+            // Vérifier si cette ligne fait partie de la même séquence
+            // en vérifiant si elle a la même direction et est contenue dans notre séquence
+            if (IsLineInSequence(scoredLine, linePoints, dx, dy))
             {
+                totalScore++;
+            }
+        }
+
+        return totalScore;
+    }
+
+    private bool IsLineInSequence(Line scoredLine, List<Point> sequence, int dx, int dy)
+    {
+        if (scoredLine.Points.Count == 0)
+            return false;
+
+        // Vérifier si tous les points de la ligne scorée sont dans la séquence
+        foreach (var point in scoredLine.Points)
+        {
+            bool found = false;
+            foreach (var seqPoint in sequence)
+            {
+                if (seqPoint.X == point.X && seqPoint.Y == point.Y)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                return false;
+        }
+
+        return true;
+    }
+
+    private void AddNewScoredLines(List<Point> linePoints, Game game, int newPoints, int dx, int dy)
+    {
+        // Ajouter les nouvelles lignes en progressant de 4 en 4
+        // On commence à partir de la position qui correspond au score actuel
+        int previousScore = GetPreviousSequenceScore(linePoints, game, dx, dy);
+        int startIndex = previousScore * 4;
+
+        for (int i = 0; i < newPoints; i++)
+        {
+            int segmentStart = startIndex + (i * 4);
+            if (segmentStart + 5 <= linePoints.Count)
+            {
+                var segment = linePoints.Skip(segmentStart).Take(5).ToList();
                 var line = new Line(segment, segment[0].Owner!);
 
                 // Vérifier que cette ligne ne coupe pas une ligne adverse
                 if (!LineIntersectsOpponentLines(line, game))
                 {
-                    newLines.Add(line);
-                    break; // Trouvé une ligne valide, on arrête pour cette direction
+                    game.AddScoredLine(line);
                 }
-                // Si elle coupe une ligne adverse, continuer à chercher d'autres segments
             }
         }
-
-        return newLines;
     }
 
     private bool LineIntersectsOpponentLines(Line newLine, Game game)

@@ -347,6 +347,13 @@ public class GameController
             _game = await _saveService.LoadTurnStateAsync(turnStateId);
             OnGameUpdated?.Invoke();
             OnPlayerChanged?.Invoke(_game.CurrentPlayer);
+
+            // Declencher OnScoreChanged pour chaque joueur pour mettre a jour l'affichage
+            foreach (var player in _game.Players)
+            {
+                OnScoreChanged?.Invoke(player, player.Score);
+            }
+
             OnSaveStatusChanged?.Invoke($"Tour {_saveService.CurrentTurnNumber} charge");
             return true;
         }

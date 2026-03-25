@@ -316,6 +316,7 @@ public class GameSaveService
 
     /// <summary>
     /// Charge un etat de tour specifique et restaure le jeu
+    /// Supprime tous les etats de tour suivants pour permettre de continuer a partir de ce point
     /// </summary>
     public async Task<Game> LoadTurnStateAsync(int turnStateId)
     {
@@ -348,11 +349,14 @@ public class GameSaveService
             autoSave = reader.GetBoolean(5);
         }
 
-        // Charger les joueurs
+        // Supprimer tous les etats de tour APRES celui qu'on charge
+        await DeleteTurnStatesAfterAsync(conn, gameId, turnNumber);
+
+        // Charger les joueurs (avec leurs canons)
         var players = await LoadPlayersAsync(conn, gameId);
 
-        // Creer le jeu
-        var game = new Game(boardWidth, boardHeight, players);
+        // Creer le jeu SANS reinitialiser les canons
+        var game = CreateGameWithoutCannonReset(boardWidth, boardHeight, players);
 
         // Charger les points
         await LoadPointsAsync(conn, turnStateId, game, players);
@@ -360,14 +364,13 @@ public class GameSaveService
         // Charger les lignes
         await LoadLinesAsync(conn, turnStateId, game, players);
 
-        // Charger les scores
+        // Charger les scores depuis turn_state_scores
         await LoadScoresAsync(conn, turnStateId, players);
 
         // Definir le joueur actuel
         var currentPlayer = players.FirstOrDefault(p => p.Id == currentPlayerId);
         if (currentPlayer != null)
         {
-            // Utiliser reflection ou propriete pour definir CurrentPlayer
             SetCurrentPlayer(game, currentPlayer);
         }
 
@@ -379,12 +382,36 @@ public class GameSaveService
         return game;
     }
 
+    /// <summary>
+    /// Cree un jeu sans reinitialiser les canons (pour le chargement)
+    /// </summary>
+    private Game CreateGameWithoutCannonReset(int boardWidth, int boardHeight, List<Player> players)
+    {
+        var game = new Game(boardWidth, boardHeight, players, skipCannonInit: true);
+        return game;
+    }
+
+    /// <summary>
+    /// Supprime tous les etats de tour apres un numero de tour donne
+    /// </summary>
+    private async Task DeleteTurnStatesAfterAsync(NpgsqlConnection conn, int gameId, int turnNumber)
+    {
+        var sql = @"
+            DELETE FROM turn_states
+            WHERE game_save_id = @gameId AND turn_number > @turnNumber";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("gameId", gameId);
+        cmd.Parameters.AddWithValue("turnNumber", turnNumber);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     private async Task<List<Player>> LoadPlayersAsync(NpgsqlConnection conn, int gameId)
     {
         var players = new List<Player>();
 
         var sql = @"
-            SELECT player_id, name, color_r, color_g, color_b, score, cannon_side, cannon_position_y
+            SELECT player_id, name, color_r, color_g, color_b, cannon_side, cannon_position_y
             FROM game_players
             WHERE game_save_id = @gameId
             ORDER BY player_id";
@@ -400,10 +427,11 @@ public class GameSaveService
                 reader.GetString(1),
                 Color.FromArgb(reader.GetInt32(2), reader.GetInt32(3), reader.GetInt32(4))
             );
-            player.Score = reader.GetInt32(5);
+            // Ne pas charger le score ici - il sera charge depuis turn_state_scores
+            player.Score = 0;
 
-            var cannonSide = reader.GetString(6) == "Left" ? CannonSide.Left : CannonSide.Right;
-            player.Cannon = new Cannon(player, cannonSide, reader.GetInt32(7));
+            var cannonSide = reader.GetString(5) == "Left" ? CannonSide.Left : CannonSide.Right;
+            player.Cannon = new Cannon(player, cannonSide, reader.GetInt32(6));
 
             players.Add(player);
         }
@@ -503,8 +531,49 @@ public class GameSaveService
 
     private async Task LoadScoresAsync(NpgsqlConnection conn, int turnStateId, List<Player> players)
     {
+        // Reinitialiser tous les scores a 0 d'abord
+        foreach (var player in players)
+        {
+            player.Score = 0;
+        }
+
         var sql = @"
             SELECT player_id, score FROM turn_state_scores WHERE turn_state_id = @turnId";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("turnId", turnStateId);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        bool foundScores = false;
+        while (await reader.ReadAsync())
+        {
+            foundScores = true;
+            var playerId = reader.GetInt32(0);
+            var score = reader.GetInt32(1);
+            var player = players.FirstOrDefault(p => p.Id == playerId);
+            if (player != null)
+            {
+                player.Score = score;
+            }
+        }
+
+        // Si aucun score trouve, calculer a partir des lignes scorees (fallback)
+        if (!foundScores)
+        {
+            await CalculateScoresFromLinesAsync(conn, turnStateId, players);
+        }
+    }
+
+    /// <summary>
+    /// Calcule les scores a partir des lignes scorees (fallback)
+    /// </summary>
+    private async Task CalculateScoresFromLinesAsync(NpgsqlConnection conn, int turnStateId, List<Player> players)
+    {
+        var sql = @"
+            SELECT owner_player_id, COUNT(*) as line_count
+            FROM turn_state_lines
+            WHERE turn_state_id = @turnId AND is_scored = true
+            GROUP BY owner_player_id";
 
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("turnId", turnStateId);
@@ -513,10 +582,12 @@ public class GameSaveService
         while (await reader.ReadAsync())
         {
             var playerId = reader.GetInt32(0);
-            var score = reader.GetInt32(1);
+            var lineCount = reader.GetInt32(1);
             var player = players.FirstOrDefault(p => p.Id == playerId);
             if (player != null)
-                player.Score = score;
+            {
+                player.Score = lineCount;
+            }
         }
     }
 
