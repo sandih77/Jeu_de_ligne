@@ -10,6 +10,8 @@ public class Game
     public List<Line> ScoredLines { get; private set; }
     public bool CurrentPlayerHasDraggedCannon { get; set; }
 
+    public Dictionary<(int x, int y), Player> DestroyedPoints { get; private set; }
+
     public Game(int boardWidth, int boardHeight, List<Player> players, bool skipCannonInit = false)
     {
         Board = new Board(boardWidth, boardHeight);
@@ -19,8 +21,8 @@ public class Game
         Winner = null;
         ScoredLines = new List<Line>();
         CurrentPlayerHasDraggedCannon = false;
+        DestroyedPoints = new Dictionary<(int x, int y), Player>();
 
-        // Initialiser les canons seulement si pas de skip (pour le chargement)
         if (!skipCannonInit && players.Count >= 2)
         {
             players[0].InitializeCannon(CannonSide.Left, boardHeight);
@@ -44,6 +46,7 @@ public class Game
         IsFinished = false;
         Winner = null;
         ScoredLines.Clear();
+        DestroyedPoints.Clear();
         CurrentPlayerHasDraggedCannon = false;
         foreach (var player in Players)
         {

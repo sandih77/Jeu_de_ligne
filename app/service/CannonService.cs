@@ -44,6 +44,8 @@ public class CannonService
         };
 
         int y = cannon.PositionY;
+        var pos = (targetX, y);
+        bool hasHistory = game.DestroyedPoints.ContainsKey(pos);
 
         // Verifier UNIQUEMENT le point a la position X cible
         var point = game.Board.GetPoint(targetX, y);
@@ -59,14 +61,26 @@ public class CannonService
                     result.HitInvulnerable = true;
                     result.WasDestroyed = false;
                 }
+                else if (hasHistory)
+                {
+                    // Position avec historique - REMPLACER le point par celui du tireur
+                    result.WasReplaced = true;
+                    result.RestoredForPlayer = cannon.Owner;
+                }
                 else
                 {
+                    // Premiere destruction
                     result.WasDestroyed = true;
                 }
             }
             // Si c'est son propre point, le tir passe a travers (pas d'effet)
         }
-        // Si pas de point a cette position, le tir se perd dans le vide
+        else if (hasHistory)
+        {
+            // Position vide avec historique - creer un point pour le tireur
+            result.WasRestored = true;
+            result.RestoredForPlayer = cannon.Owner;
+        }
 
         return result;
     }
@@ -76,9 +90,24 @@ public class CannonService
     /// </summary>
     public void ApplyFireResult(Game game, CannonFireResult result)
     {
+        var pos = (result.TargetX, result.Y);
+
         if (result.WasDestroyed && result.HitPoint != null)
         {
+            // Premiere destruction - stocker et retirer
+            game.DestroyedPoints[pos] = result.HitPoint.Owner!;
             game.Board.RemovePoint(result.HitPoint.X, result.HitPoint.Y);
+        }
+        else if (result.WasReplaced && result.RestoredForPlayer != null)
+        {
+            // Remplacement - retirer l'ancien et placer le nouveau
+            game.Board.RemovePoint(result.TargetX, result.Y);
+            game.Board.PlacePoint(result.TargetX, result.Y, result.RestoredForPlayer);
+        }
+        else if (result.WasRestored && result.RestoredForPlayer != null)
+        {
+            // Restauration sur position vide
+            game.Board.PlacePoint(result.TargetX, result.Y, result.RestoredForPlayer);
         }
     }
 

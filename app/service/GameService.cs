@@ -43,15 +43,14 @@ public class GameService
         if (game.IsFinished)
             return false;
 
-        // Vérifier si le point couperait une ligne de l'adversaire
-        if (WouldCrossOpponentLine(game, x, y, game.CurrentPlayer))
-            return false;
-
         bool placed = game.Board.PlacePoint(x, y, game.CurrentPlayer);
 
         if (placed)
         {
-            // Vérifier si une ligne de 5 est formée
+            // Invalider les lignes adverses coupées par ce point
+            InvalidateCrossedOpponentLines(game, x, y, game.CurrentPlayer);
+
+            // Vérifier si une ligne de 5 est formée pour le joueur actuel
             CheckForLines(game, x, y, game.CurrentPlayer);
             game.NextTurn();
         }
@@ -59,19 +58,42 @@ public class GameService
         return placed;
     }
 
-    private bool WouldCrossOpponentLine(Game game, int x, int y, Player currentPlayer)
+    private void InvalidateCrossedOpponentLines(Game game, int x, int y, Player currentPlayer)
     {
+        var linesToRemove = new List<Line>();
+
         foreach (var line in game.ScoredLines)
         {
-            // On peut couper ses propres lignes
+            // Ne vérifier que les lignes adverses
             if (line.Owner == currentPlayer)
                 continue;
 
-            // Vérifier si le point (x, y) est sur le segment de la ligne adverse
+            // Si le point coupe cette ligne adverse, la marquer pour suppression
             if (IsPointOnLineSegment(x, y, line))
-                return true;
+            {
+                linesToRemove.Add(line);
+            }
         }
-        return false;
+
+        // Supprimer les lignes coupées et retirer les points
+        foreach (var line in linesToRemove)
+        {
+            game.ScoredLines.Remove(line);
+            line.Owner.Score--;
+
+            // Retirer le marquage "part of scored line" des points de cette ligne
+            foreach (var point in line.Points)
+            {
+                // Vérifier si ce point fait partie d'une autre ligne scorée
+                bool stillInOtherLine = game.ScoredLines.Any(l =>
+                    l.Points.Any(p => p.X == point.X && p.Y == point.Y));
+
+                if (!stillInOtherLine)
+                {
+                    point.ScoredDirections.Clear();
+                }
+            }
+        }
     }
 
     private bool IsPointOnLineSegment(int x, int y, Line line)
@@ -272,23 +294,37 @@ public class GameService
 
     private void AddNewScoredLines(List<Point> linePoints, Game game, int newPoints, int dx, int dy)
     {
-        // Ajouter les nouvelles lignes en progressant de 4 en 4
         // On commence à partir de la position qui correspond au score actuel
         int previousScore = GetPreviousSequenceScore(linePoints, game, dx, dy);
-        int startIndex = previousScore * 4;
+        int linesAdded = 0;
 
-        for (int i = 0; i < newPoints; i++)
+        // Essayer tous les segments possibles de 5 points
+        for (int startIdx = 0; startIdx + 5 <= linePoints.Count && linesAdded < newPoints; startIdx++)
         {
-            int segmentStart = startIndex + (i * 4);
-            if (segmentStart + 5 <= linePoints.Count)
-            {
-                var segment = linePoints.Skip(segmentStart).Take(5).ToList();
-                var line = new Line(segment, segment[0].Owner!);
+            var segment = linePoints.Skip(startIdx).Take(5).ToList();
+            var line = new Line(segment, segment[0].Owner!);
 
-                // Vérifier que cette ligne ne coupe pas une ligne adverse
-                if (!LineIntersectsOpponentLines(line, game))
+            // Vérifier si ce segment croise une ligne adverse
+            if (!LineIntersectsOpponentLines(line, game))
+            {
+                // Vérifier que ce segment n'est pas déjà scoré
+                bool alreadyScored = game.ScoredLines.Any(sl =>
+                    sl.Owner == line.Owner &&
+                    sl.Points.First().X == segment.First().X &&
+                    sl.Points.First().Y == segment.First().Y &&
+                    sl.Points.Last().X == segment.Last().X &&
+                    sl.Points.Last().Y == segment.Last().Y);
+
+                if (!alreadyScored)
                 {
+                    // Marquer chaque point du segment comme protégé dans cette direction
+                    foreach (var point in segment)
+                    {
+                        point.MarkScoredInDirection(dx, dy);
+                    }
+
                     game.AddScoredLine(line);
+                    linesAdded++;
                 }
             }
         }

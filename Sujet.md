@@ -20,3 +20,9 @@ on touche sur ctrl+X
 X sont les touches de 1 à 9 en bas des touches fx
 et c est cela qui defninissent la vitesse
 Donc pendant son tour il choisit si il place une point ou il tire pas des deux si il glisse le canon donc il tire esle il place le point
+
+
+
+Maintenant ajoutons une nouvelle fonctionnalité sur le tir des canons
+si joueur1 tire sur (x,y) et que le point sur cette point disparaissent et que lorsque joueur2 retire sur cette même (x,y) alors son point réapparait 
+Et apres si joueur1 retire sur cette meme (x,y) donc cette point sera remplacé par le sien et redevient en cycle 

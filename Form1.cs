@@ -304,6 +304,14 @@ public partial class Form1 : Form
         {
             ShowCannonFeedback($"TOUCHE! Point detruit en ({result.HitPoint.X}, {result.HitPoint.Y})", Color.LimeGreen);
         }
+        else if (result.WasReplaced && result.RestoredForPlayer != null)
+        {
+            ShowCannonFeedback($"REMPLACE! Point en ({result.TargetX}, {result.Y}) -> {result.RestoredForPlayer.Name}", Color.Orange);
+        }
+        else if (result.WasRestored && result.RestoredForPlayer != null)
+        {
+            ShowCannonFeedback($"RESTAURE! Point cree en ({result.TargetX}, {result.Y}) pour {result.RestoredForPlayer.Name}", Color.Cyan);
+        }
         else
         {
             ShowCannonFeedback("Tir manque - aucun point adverse touche.", Color.Gray);

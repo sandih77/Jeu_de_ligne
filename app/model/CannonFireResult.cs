@@ -11,6 +11,10 @@ public class CannonFireResult
     public bool WasDestroyed { get; set; }
     public bool HitInvulnerable { get; set; }
 
+    public bool WasRestored { get; set; }
+    public bool WasReplaced { get; set; }
+    public Player? RestoredForPlayer { get; set; }
+
     public CannonFireResult(Cannon cannon, int speed, int y)
     {
         Cannon = cannon;
@@ -21,5 +25,8 @@ public class CannonFireResult
         HitPoint = null;
         WasDestroyed = false;
         HitInvulnerable = false;
+        WasRestored = false;
+        WasReplaced = false;
+        RestoredForPlayer = null;
     }
 }
